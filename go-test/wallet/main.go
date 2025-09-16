@@ -125,7 +125,49 @@ func deposit() {
 // - уменьшить баланс, если хватает денег
 // - если нет — сообщение об ошибке
 func withdraw() {
+	var idStr string
+	var amountStr string
 
+	fmt.Println("Введите ID, чтоб снять деньги")
+	fmt.Scanln(&idStr)
+
+	id, err := strToInt(idStr)
+
+	if err != nil {
+		fmt.Println("Некорректный ID")
+		return
+	}
+
+	fmt.Println("Введите сумму для снятия")
+	fmt.Scanln(&amountStr)
+
+	amount, errAmount := strToFloat(amountStr)
+
+	if errAmount != nil {
+		fmt.Println("Некорректно введено значение")
+		return
+	}
+
+	if user, ok := users[id]; ok {
+		if user.Account.Balance > amount {
+			user.Account.Balance -= amount
+			users[id] = user
+		} else {
+			fmt.Println("Недостаточно средств")
+		}
+	}
+
+}
+
+func strToInt(str string) (int, error) {
+	res, err := strconv.Atoi(str)
+
+	return res, err
+}
+
+func strToFloat(str string) (float64, error) {
+	res, err := strconv.ParseFloat(str, 64)
+	return res, err
 }
 
 // transfer
@@ -139,6 +181,32 @@ func withdraw() {
 // - если всё ок — уменьшить баланс отправителя и увеличить баланс получателя
 // - если нет — сообщение об ошибке
 func transfer() {
+	var idSenderStr string
+	var idRecipientStr string
+	var amountStr string
+
+	fmt.Println("Введите ID отправителя")
+	fmt.Scan(&idSenderStr)
+	fmt.Println("Введите ID получателя")
+	fmt.Scan(&idRecipientStr)
+	fmt.Println("Введите сумму")
+	fmt.Scan(&amountStr)
+
+	idSender, _ := strToInt(idSenderStr)
+	idRecipient, _ := strToInt(idRecipientStr)
+	amount, _ := strToFloat(amountStr)
+
+	userSender, okSender := users[idSender]
+	userRecipient, okRecipient := users[idRecipient]
+
+	if (okRecipient && okSender) && (users[idSender].Account.Balance >= amount) {
+		userSender.Account.Balance = userSender.Account.Balance - amount
+		users[idSender] = userSender
+		userRecipient.Account.Balance = userRecipient.Account.Balance + amount
+		users[idRecipient] = userRecipient
+	} else {
+		fmt.Println("Ошибка попробуйте еще раз")
+	}
 
 }
 
@@ -156,7 +224,7 @@ func showBalance() {
 	fmt.Println("Введите ID пользователя чтобы узнать баланс")
 	fmt.Scan(&idstr)
 
-	id, err := strconv.Atoi(idstr)
+	id, err := strToInt(idstr)
 	if err != nil {
 		fmt.Println("Пользователя с таким ID не существует")
 		return
