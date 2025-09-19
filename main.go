@@ -1,85 +1,142 @@
-package main
+// сколько продлится бой
+const maxRounds = 5
 
-import (
-	"fmt"
+// Размер монстра.
+const (
+sizeSmall = iota
+sizeMedium
+sizeLarge
 )
 
-// validator проверяет строку на соответствие некоторому условию
-// и возвращает результат проверки
-type validator func(s string) bool
+// Оружие героя.
+const (
+weaponDagger = iota
+weaponSword
+weaponLightsaber
+)
 
-// digits возвращает true, если s содержит хотя бы одну цифру
-// согласно unicode.IsDigit(), иначе false
-func digits(s string) bool {
-	fmt.Println("test")
+// Специальные навыки героя/монстра.
+const (
+traitLucky  = 0b0001
+traitFast   = 0b0010
+traitStrong = 0b0100
+traitRegen  = 0b1000
+)
 
-	//str := s
-	//isDigit := false
-	//for _, val := range str {
-	//	if unicode.IsDigit(val) {
-	//		isDigit = true
-	//	}
-	//}
-	return true
+// Участник сражения.
+type Actor struct {
+name   string
+attp   int // aтака
+defp   int // защита
+hp     int // здоровье
+traits int
 }
 
-// letters возвращает true, если s содержит хотя бы одну букву
-// согласно unicode.IsLetter(), иначе false
-func letters(s string) bool {
-	// ...
-	return true
+// Defend рассчитывает урон актору,
+// учитывая его защиту и специальные навыки.
+func (a Actor) Defend(damage int) int {
+effectiveDamage := damage - a.defp
+if a.HasTrait(traitFast) {
+effectiveDamage -= 10
+}
+if a.HasTrait(traitLucky) && checkLuck() {
+effectiveDamage -= 10
+}
+if a.HasTrait(traitRegen) {
+effectiveDamage /= 2
+}
+if effectiveDamage < 0 {
+return 0
+}
+return effectiveDamage
 }
 
-// minlen возвращает валидатор, который проверяет, что длина
-// строки согласно utf8.RuneCountInString() - не меньше указанной
-func minlen(length int) validator {
-
-	return func(s string) bool {
-		return true
-	}
+// HasTrait проверяет, есть ли у актора указанный навык.
+func (a Actor) HasTrait(trait int) bool {
+return a.traits&trait != 0
 }
 
-// and возвращает валидатор, который проверяет, что все
-// переданные ему валидаторы вернули true
-func and(funcs ...validator) validator {
-	// ...
-	return func(s string) bool {
-		return true
-	}
+// Герой.
+type Hero struct {
+Actor
+weapon int
 }
 
-// or возвращает валидатор, который проверяет, что хотя бы один
-// переданный ему валидатор вернул true
-func or(funcs ...validator) validator {
-	// ...
-	return func(s string) bool {
-		return true
-	}
+// Attack возвращает урон, нанесенный героем,
+// c учетом оружия и специальных навыков.
+func (h Hero) Attack() int {
+damage := h.attp
+switch h.weapon {
+case weaponSword:
+damage += 500
+case weaponLightsaber:
+damage += 1000
+}
+if h.HasTrait(traitStrong) {
+damage += 1000
+}
+if h.HasTrait(traitLucky) && checkLuck() {
+damage += 1000
+}
+return damage
 }
 
-// password содержит строку со значением пароля и валидатор
-type password struct {
-	value string
-	validator
+// Монстр.
+type Monster struct {
+Actor
+size int
 }
 
-// isValid() проверяет, что пароль корректный, согласно
-// заданному для пароля валидатору
-func (p *password) isValid() bool {
-	// ...
-	return true
+// Attack возвращает урон, нанесенный монстром,
+// c учетом размера и специальных навыков.
+func (m Monster) Attack() int {
+damage := m.attp
+switch m.size {
+case sizeMedium:
+damage += 5
+case sizeLarge:
+damage += 10
+}
+if m.HasTrait(traitStrong) {
+damage += 10
+}
+if m.HasTrait(traitLucky) && checkLuck() {
+damage += 10
+}
+return damage
 }
 
-// ┌─────────────────────────────────┐
-// │ не меняйте код ниже этой строки │
-// └─────────────────────────────────┘
-
-func main() {
-	var s string
-	fmt.Scan(&s)
-	// валидатор, который проверяет, что пароль содержит буквы и цифры,
-	// либо его длина не менее 10 символов
-	validator := or(and(digits, letters), minlen(10))
-	p := password{s, validator}
-	fmt.Println(p.isValid())
+// generateHero генерирует случайного героя.
+func generateHero(name string) Hero {
+return Hero{
+Actor: Actor{
+name:   name,
+attp:   (8 + rand.Intn(5)) * 200,
+defp:   (8 + rand.Intn(5)) * 100,
+hp:     (8 + rand.Intn(3)) * 400,
+traits: rand.Intn(16),
+},
+weapon: rand.Intn(3),
 }
+}
+
+// generateMonster генерирует случайного монстра.
+func generateMonster(name string) Monster {
+return Monster{
+Actor: Actor{
+name:   name,
+attp:   (8 + rand.Intn(5)) * 2,
+defp:   (8 + rand.Intn(5)) * 1,
+hp:     (8 + rand.Intn(3)) * 4,
+traits: rand.Intn(16),
+},
+size: rand.Intn(3),
+}
+}
+
+// checkLuck проверяет удачу.
+func checkLuck() bool {
+return rand.Intn(2) == 0
+}
+
+// дальше идет скрытый код игры
